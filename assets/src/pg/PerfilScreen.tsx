@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
-import { Button } from '@rneui/themed';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, SafeAreaView, ScrollView } from 'react-native';
+import { Button, Icon } from '@rneui/themed';
 import * as ImagePicker from 'expo-image-picker'; 
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../components/AuthContext';
+import { useNavigation, NavigationProp } from '@react-navigation/native'; 
+
+
+type RootStackParamList = { Login: undefined; Home: undefined; Perfil: undefined };
+type PerfilScreenNavigationProp = NavigationProp<RootStackParamList, 'Perfil'>;
 
 export default function PerfilScreen() {
     const { user, signOut } = useAuth(); 
+    const navigation = useNavigation<PerfilScreenNavigationProp>(); 
     const [imageUri, setImageUri] = useState<string | null>(null);
 
-    
     const requestPermissions = async () => {
         const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
@@ -61,63 +66,95 @@ export default function PerfilScreen() {
         );
     };
 
+    
+    const handleLogout = async () => {
+        try {
+            await signOut(); 
+            Alert.alert("Sucesso", "Sessão encerrada com sucesso!");
+            
+            
+            navigation.replace('Login'); 
+        } catch (error) {
+            Alert.alert("Erro", "Não foi possível encerrar a sessão.");
+            console.error("Erro ao fazer logout:", error);
+        }
+    };
+    
     const userName = user?.email.split('@')[0] || 'Usuário';
     const userEmail = user?.email || 'E-mail não disponível';
-    const userMembroDesde = user?.membroDesde || 'Data não disponível';
-    
-
+    const userMembroDesde = user?.membroDesde || 'Junho, 2023';
     const placeholderImage = require('../img/fundo.jpeg');
 
-
     return (
-        <View style={styles.container}>
-
-            <TouchableOpacity onPress={handleImagePick} style={styles.imageContainer}>
-                <Image
-                    source={imageUri ? { uri: imageUri } : placeholderImage} 
-                    style={styles.profileImage}
-                />
-                <View style={styles.editIcon}>
-                    <Ionicons name="camera" size={20} color="white" />
-                </View>
-            </TouchableOpacity>
-            
-
-            <View style={styles.dataContainer}>
-                <Text style={styles.title}>{userName}</Text> 
-                
-                <View style={styles.infoRow}>
-                    <Ionicons name="mail" size={18} color="#BBDEFB" style={{ marginRight: 8 }} />
-                    <Text style={styles.text}>{userEmail}</Text> 
-                </View>
-                
-                <View style={styles.infoRow}>
-                    <Ionicons name="calendar" size={18} color="#BBDEFB" style={{ marginRight: 8 }} />
-                    <Text style={styles.text}>Membro desde: {userMembroDesde}</Text> 
-                </View>
+        <SafeAreaView style={styles.background}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Meu Perfil</Text>
             </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <TouchableOpacity onPress={handleImagePick} style={styles.imageContainer}>
+                    <Image
+                        source={imageUri ? { uri: imageUri } : placeholderImage} 
+                        style={styles.profileImage}
+                    />
+                    <View style={styles.editIcon}>
+                        <Ionicons name="camera" size={20} color="#FFFFFF" />
+                    </View>
+                </TouchableOpacity>
             
+                <View style={styles.dataCard}>
+                    <Text style={styles.title}>{userName}</Text> 
+                    <Text style={styles.tagline}>Membro EcoVerde</Text>
+                    
+                    <View style={styles.infoRow}>
+                        <Icon name="mail" type="ionicon" size={18} color="#4D7C0F" style={styles.infoIcon} />
+                        <Text style={styles.text}>{userEmail}</Text> 
+                    </View>
+                    
+                    <View style={styles.infoRow}>
+                        <Icon name="calendar-outline" type="ionicon" size={18} color="#4D7C0F" style={styles.infoIcon} />
+                        <Text style={styles.text}>Membro desde: {userMembroDesde}</Text> 
+                    </View>
 
-            <Button
-                title="Sair (Logout)"
-                buttonStyle={styles.logoutButton}
-                titleStyle={{ color: '#FFF' }}
-                onPress={() => {
-                    signOut();
-
-                }}
-            />
-
-        </View>
+                    <Button
+                        title="Editar Dados Pessoais"
+                        type="outline"
+                        buttonStyle={styles.editButtonOutline}
+                        titleStyle={styles.editButtonTitle}
+                        onPress={() => Alert.alert('Função em desenvolvimento!')}
+                    />
+                </View>
+            
+                <Button
+                    title="Sair (Logout)"
+                    buttonStyle={styles.logoutButton}
+                    titleStyle={{ color: '#FFF', fontWeight: '600' }}
+                    onPress={handleLogout} // 5. Chamar a nova função handleLogout
+                    accessibilityHint="Toca duas vezes para sair da sua conta"
+                />
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    background: {
         flex: 1,
-        alignItems: 'center',
-        backgroundColor: '#000033',
+        backgroundColor: '#F0FDF4',
         paddingTop: 50,
+    },
+    header: {
+        paddingBottom: 20,
+        alignItems: 'center',
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1A2E05',
+    },
+    scrollContent: {
+        alignItems: 'center',
+        padding: 20,
     },
     imageContainer: {
         marginBottom: 30,
@@ -127,41 +164,79 @@ const styles = StyleSheet.create({
         width: 150,
         height: 150,
         borderRadius: 75,
-        borderWidth: 3,
-        borderColor: '#4FC3F7',
+        borderWidth: 4,
+        borderColor: '#65A30D',
     },
     editIcon: {
         position: 'absolute',
-        bottom: 5,
-        right: 5,
-        backgroundColor: '#00BCD4',
-        borderRadius: 15,
-        padding: 5,
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#4D7C0F',
+        borderRadius: 20,
+        padding: 8,
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
     },
-    dataContainer: {
+    dataCard: {
+        width: '100%',
+        maxWidth: 400,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 20,
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: 30,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
     },
     title: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: 'bold',
-        color: '#E0F7FA',
-        marginBottom: 15,
+        color: '#1A2E05',
+        marginBottom: 4,
+    },
+    tagline: {
+        fontSize: 14,
+        color: '#65A30D',
+        fontWeight: '500',
+        marginBottom: 20,
     },
     infoRow: {
+        width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 12,
+        paddingVertical: 4,
+        borderBottomWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    infoIcon: {
+        marginRight: 10,
+        paddingTop: 2,
     },
     text: {
-        fontSize: 18,
-        color: '#BBDEFB',
+        fontSize: 16,
+        color: '#3F3F46',
+    },
+    editButtonOutline: {
+        marginTop: 20,
+        width: 250,
+        borderRadius: 8,
+        borderColor: '#65A30D',
+        borderWidth: 2,
+        backgroundColor: 'transparent',
+    },
+    editButtonTitle: {
+        color: '#65A30D',
+        fontWeight: '600',
     },
     logoutButton: {
-        backgroundColor: 'red',
+        backgroundColor: '#DC2626',
         paddingHorizontal: 30,
         paddingVertical: 10,
         borderRadius: 8,
-        marginTop: 10,
+        marginTop: 20,
     },
 });
